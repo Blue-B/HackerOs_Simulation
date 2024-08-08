@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Ubuntu Mono', monospace;
+      color: #00ff00;
+      overflow: hidden;
+      background-color: #000;
+    }
+    #desktop {
+      width: 100%;
+      height: calc(100% - 30px);
+      position: relative;
+      background-size: cover;
+      background-position: center;
+      transition: background 0.5s ease-in-out;
+    }
+       /* 터미널 입력란 스타일 추가 */
+       .terminal-input {
+        background: transparent;
+        border: none;
+        color: #00ff00;
+        font-family: 'Ubuntu Mono', monospace;
+        font-size: 14px;
+        outline: none;
+        width: calc(100% - 150px); /* 프롬프트 길이에 따라 조정 */
+      }
+      .terminal-line {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      .terminal-prompt {
+        color: #00ff00;
+        margin-right: 10px;
+      }
+    #taskbar {
+      width: 100%;
+      height: 30px;
+      background-color: rgba(0, 20, 0, 0.8);
+      position: fixed;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      box-sizing: border-box;
+      z-index: 1000;
+    }
+    .icon {
+      width: 24px;
+      height: 24px;
+      margin-right: 10px;
+      cursor: pointer;
+      fill: #00ff00;
+    }
+    #time {
+      margin-left: auto;
+      font-size: 14px;
+    }
+    .window {
+      position: absolute;
+      background-color: rgba(0, 20, 0, 0.9);
+      border: 1px solid #00ff00;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,255,0,0.5);
+      overflow: hidden;
+      min-width: 200px;
+      min-height: 100px;
+    }
+    .window-header {
+      background-color: rgba(0, 40, 0, 0.9);
+      padding: 10px;
+      cursor: move;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .window-title {
+      margin: 0;
+      font-size: 16px;
+    }
+    .window-controls {
+      display: flex;
+    }
+    .window-button {
+      background: none;
+      border: none;
+      color: #00ff00;
+      cursor: pointer;
+      margin-left: 5px;
+      font-size: 16px;
+    }
+    .window-content {
+      padding: 10px;
+      overflow-y: auto;
+      max-height: calc(100% - 50px);
+    }
+    #selection-box {
+      position: absolute;
+      border: 1px dashed #00ff00;
+      background-color: rgba(0, 255, 0, 0.1);
+      pointer-events: none;
+      display: none;
+      z-index: 9999;
+    }
+    .file-icon {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .file-icon svg {
+      width: 40px;
+      height: 40px;
+      fill: #00ff00;
+    }
+    .file-name {
+      font-size: 12px;
+      text-align: center;
+      word-break: break-word;
+      color: #00ff00;
+    }
+
+    /* 파일 아이콘 선택 스타일 추가 */
+    .file-icon.selected {
+      background-color: rgba(0, 255, 0, 0.2);
+      border: 1px solid #00ff00;
+    }
+
+    /* 파일 이름 편집 스타일 */
+    .file-name-edit {
+      background: transparent;
+      border: none;
+      color: #00ff00;
+      font-family: 'Ubuntu Mono', monospace;
+      font-size: 12px;
+      text-align: center;
+      width: 100%;
+      outline: none;
+    }
+    #start-menu {
+      position: absolute;
+      bottom: 30px;
+      left: 0;
+      background-color: rgba(0, 20, 0, 0.9);
+      border: 1px solid #00ff00;
+      border-radius: 5px;
+      padding: 10px;
+      display: none;
+      z-index: 1001;
+    }
+    .start-menu-item {
+      color: #00ff00;
+      cursor: pointer;
+      padding: 5px;
+    }
+    .start-menu-item:hover {
+      background-color: rgba(0, 60, 0, 0.9);
+    }
+    #browser-content {
+      width: 100%;
+      height: calc(100% - 30px);
+      border: none;
+    }
+    .browser-controls {
+      display: flex;
+      padding: 5px;
+      background-color: rgba(0, 40, 0, 0.9);
+    }
+    .browser-controls input {
+      flex-grow: 1;
+      margin: 0 5px;
+      background-color: rgba(0, 20, 0, 0.9);
+      border: 1px solid #00ff00;
+      color: #00ff00;
+    }
+    .browser-controls button {
+      background-color: rgba(0, 60, 0, 0.9);
+      border: 1px solid #00ff00;
+      color: #00ff00;
+      cursor: pointer;
+    }
+    .wallpaper-list {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    .wallpaper-item {
+      padding: 5px;
+      cursor: pointer;
+    }
+    .wallpaper-item:hover {
+      background-color: rgba(0, 60, 0, 0.9);
+    }
+    .resize-handle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      bottom: 0;
+      right: 0;
+      cursor: se-resize;
+      background-color: #00ff00;
+    }
+    /* 스크롤바 스타일 */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 20, 0, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #00ff00;
+      border-radius: 5px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00cc00;
+    }
+  </style>
+</head>
+<body>
+  <div id="desktop"></div>
+  <div id="selection-box"></div>
+  <div id="taskbar">
+    <svg class="icon" id="start-icon" viewBox="0 0 24 24">
+      <path d="M3,12H7A5,5 0 0,1 12,7A5,5 0 0,1 17,12H21A1,1 0 0,1 22,13A1,1 0 0,1 21,14H3A1,1 0 0,1 2,13A1,1 0 0,1 3,12M5,16H19A1,1 0 0,1 20,17A1,1 0 0,1 19,18H5A1,1 0 0,1 4,17A1,1 0 0,1 5,16M7,20H17A1,1 0 0,1 18,21A1,1 0 0,1 17,22H7A1,1 0 0,1 6,21A1,1 0 0,1 7,20Z" />
+    </svg>
+    <svg class="icon" id="terminal-icon" viewBox="0 0 24 24">
+      <path d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z" />
+    </svg>
+    <svg class="icon" id="browser-icon" viewBox="0 0 24 24">
+      <path d="M16.36,14C16.44,13.34 16.5,12.68 16.5,12C16.5,11.32 16.44,10.66 16.36,10H19.74C19.9,10.64 20,11.31 20,12C20,12.69 19.9,13.36 19.74,14M14.59,19.56C15.19,18.45 15.65,17.25 15.97,16H18.92C17.96,17.65 16.43,18.93 14.59,19.56M14.34,14H9.66C9.56,13.34 9.5,12.68 9.5,12C9.5,11.32 9.56,10.65 9.66,10H14.34C14.43,10.65 14.5,11.32 14.5,12C14.5,12.68 14.43,13.34 14.34,14M12,19.96C11.17,18.76 10.5,17.43 10.09,16H13.91C13.5,17.43 12.83,18.76 12,19.96M8,8H5.08C6.03,6.34 7.57,5.06 9.4,4.44C8.8,5.55 8.35,6.75 8,8M5.08,16H8C8.35,17.25 8.8,18.45 9.4,19.56C7.57,18.93 6.03,17.65 5.08,16M4.26,14C4.1,13.36 4,12.69 4,12C4,11.31 4.1,10.64 4.26,10H7.64C7.56,10.66 7.5,11.32 7.5,12C7.5,12.68 7.56,13.34 7.64,14M12,4.03C12.83,5.23 13.5,6.57 13.91,8H10.09C10.5,6.57 11.17,5.23 12,4.03M18.92,8H15.97C15.65,6.75 15.19,5.55 14.59,4.44C16.43,5.07 17.96,6.34 18.92,8M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
+    </svg>
+    <svg class="icon" id="metasploit-icon" viewBox="0 0 24 24">
+      <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
+    </svg>
+    <svg class="icon" id="nmap-icon" viewBox="0 0 24 24">
+      <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z" />
+    </svg>
+    <svg class="icon" id="background-icon" viewBox="0 0 24 24">
+      <path d="M19,19H5V5H19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M13,17H15V13H17V11H15V9H13V11H11V9H9V11H11V13H9V15H11V17H13V15H11V13H13V17Z" />
+    </svg>
+    <div id="time"></div>
+  </div>
+  <div id="start-menu">
+    <div class="start-menu-item" id="programs-menu">Programs</div>
+    <div class="start-menu-item" id="settings-menu">Settings</div>
+    <div class="start-menu-item" id="power-off">Power Off</div>
+  </div>
+
+  <script>
+    const desktop = document.getElementById('desktop');
+    const timeDisplay = document.getElementById('time');
+    const selectionBox = document.getElementById('selection-box');
+    const startIcon = document.getElementById('start-icon');
+    const startMenu = document.getElementById('start-menu');
+    
+    let windowIndex = 0;
+    let activeWindows = [];
+    let isDragging = false;
+    let startX, startY;
+    let isStartMenuVisible = false;
+    let fileCounter = 1;
+
+    // 파일 시스템 시뮬레이션
+    const fileSystem = {
+      '/': {
+        type: 'directory',
+        content: {
+          'home': {
+            type: 'directory',
+            content: {
+              'user': {
+                type: 'directory',
+                content: {}
+              }
+            }
+          }
+        }
+      }
+    };
+    
+    let currentPath = '/home/user';
+
+    function updateTime() {
+      const now = new Date();
+      timeDisplay.textContent = now.toLocaleTimeString();
+    }
+
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    function createWindow(title, content, x, y, width, height) {
+      const window = document.createElement('div');
+      window.className = 'window';
+      window.style.left = `${x}px`;
+      window.style.top = `${y}px`;
+      window.style.width = `${width}px`;
+      window.style.height = `${height}px`;
+      window.style.zIndex = 1000 + windowIndex++;
+
+      const header = document.createElement('div');
+      header.className = 'window-header';
+
+      const titleElem = document.createElement('h3');
+      titleElem.className = 'window-title';
+      titleElem.textContent = title;
+
+      const controls = document.createElement('div');
+      controls.className = 'window-controls';
+
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'window-button';
+      closeBtn.textContent = '✕';
+      closeBtn.onclick = () => {
+        if (window.onBeforeClose) {
+          window.onBeforeClose(() => {
+            window.remove();
+            activeWindows = activeWindows.filter(w => w !== window);
+          });
+        } else {
+          window.remove();
+          activeWindows = activeWindows.filter(w => w !== window);
+        }
+      };
+
+      controls.appendChild(closeBtn);
+      header.appendChild(titleElem);
+      header.appendChild(controls);
+
+      const windowContent = document.createElement('div');
+      windowContent.className = 'window-content';
+      windowContent.innerHTML = content;
+
+      window.appendChild(header);
+      window.appendChild(windowContent);
+
+      // 크기 조절 핸들 추가
+      const resizeHandle = document.createElement('div');
+      resizeHandle.className = 'resize-handle';
+      window.appendChild(resizeHandle);
+
+      desktop.appendChild(window);
+      activeWindows.push(window);
+
+      let isDragging = false;
+      let isResizing = false;
+      let dragOffsetX, dragOffsetY;
+
+      // 창을 클릭할 때 최상위로 가져오기
+      window.addEventListener('mousedown', () => {
+        window.style.zIndex = 1000 + windowIndex++;
+      });
+
+      // 창 헤더를 드래그하여 이동
+      header.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        dragOffsetX = e.clientX - window.offsetLeft;
+        dragOffsetY = e.clientY - window.offsetTop;
+        e.preventDefault();
+      });
+
+      // 창 크기 조절
+      resizeHandle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        e.stopPropagation();
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          window.style.left = `${e.clientX - dragOffsetX}px`;
+          window.style.top = `${e.clientY - dragOffsetY}px`;
+        } else if (isResizing) {
+          const newWidth = e.clientX - window.offsetLeft;
+          const newHeight = e.clientY - window.offsetTop;
+          window.style.width = `${newWidth}px`;
+          window.style.height = `${newHeight}px`;
+        }
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+        isResizing = false;
+      });
+
+      return window;
+    }
+
+    function getDirectory(path) {
+      const parts = path.split('/').filter(p => p);
+      let current = fileSystem['/'];
+      for (const part of parts) {
+        if (current.content && current.content[part]) {
+          current = current.content[part];
+        } else {
+          return null;
+        }
+      }
+      return current;
+    }
+
+    startIcon.onclick = () => {
+      isStartMenuVisible = !isStartMenuVisible;
+      startMenu.style.display = isStartMenuVisible ? 'block' : 'none';
+    };
+
+    document.getElementById('power-off').onclick = () => {
+      if (confirm('Are you sure you want to power off?')) {
+        document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-size:24px;color:#00ff00;background-color:#000;">System Powered Off</div>';
+      }
+    };
+
+    desktop.addEventListener('mousedown', (e) => {
+      if (e.target === desktop) {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        selectionBox.style.left = startX + 'px';
+        selectionBox.style.top = startY + 'px';
+        selectionBox.style.width = '0px';
+        selectionBox.style.height = '0px';
+        selectionBox.style.display = 'block';
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const width = e.clientX - startX;
+        const height = e.clientY - startY;
+        selectionBox.style.width = Math.abs(width) + 'px';
+        selectionBox.style.height = Math.abs(height) + 'px';
+        selectionBox.style.left = (width < 0 ? e.clientX : startX) + 'px';
+        selectionBox.style.top = (height < 0 ? e.clientY : startY) + 'px';
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      selectionBox.style.display = 'none';
+    });
+
+    desktop.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const contextMenu = document.createElement('div');
+      contextMenu.style.position = 'absolute';
+      contextMenu.style.left = e.clientX + 'px';
+      contextMenu.style.top = e.clientY + 'px';
+      contextMenu.style.backgroundColor = 'rgba(0, 20, 0, 0.9)';
+      contextMenu.style.border = '1px solid #00ff00';
+      contextMenu.style.padding = '5px';
+      contextMenu.style.zIndex = '10000';
+      contextMenu.innerHTML = '<div style="cursor: pointer; padding: 5px; color: #00ff00;">New Text Document</div>';
+      
+      contextMenu.firstChild.addEventListener('click', () => {
+        createTextFile(e.clientX, e.clientY);
+        document.body.removeChild(contextMenu);
+      });
+
+      document.body.appendChild(contextMenu);
+      
+      const removeMenu = (event) => {
+        if (!contextMenu.contains(event.target)) {
+          document.body.removeChild(contextMenu);
+          document.removeEventListener('click', removeMenu);
+        }
+      };
+      
+      setTimeout(() => {
+        document.addEventListener('click', removeMenu);
+      }, 0);
+    });
+
+    function createTextFile(x, y) {
+      const fileName = `New Text Document ${fileCounter++}.txt`;
+      const fileIcon = document.createElement('div');
+      fileIcon.className = 'file-icon';
+      fileIcon.style.left = x + 'px';
+      fileIcon.style.top = y + 'px';
+      fileIcon.innerHTML = `
+        <svg viewBox="0 0 24 24">
+          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+        </svg>
+        <div class="file-name">${fileName}</div>
+      `;
+      
+      desktop.appendChild(fileIcon);
+      
+      fileIcon.addEventListener('dblclick', () => {
+        openTextEditor(fileName);
+      });
+
+      fileIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectFile(fileIcon);
+      });
+
+      let isDraggingIcon = false;
+      let iconStartX, iconStartY;
+
+      fileIcon.addEventListener('mousedown', (e) => {
+        isDraggingIcon = true;
+        iconStartX = e.clientX - fileIcon.offsetLeft;
+        iconStartY = e.clientY - fileIcon.offsetTop;
+        e.stopPropagation();
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (isDraggingIcon) {
+          fileIcon.style.left = (e.clientX - iconStartX) + 'px';
+          fileIcon.style.top = (e.clientY - iconStartY) + 'px';
+        }
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDraggingIcon = false;
+      });
+
+      const userDir = getDirectory('/home/user');
+      userDir.content[fileName] = {
+        type: 'file',
+        content: ''
+      };
+    }
+
+    function selectFile(fileIcon) {
+      document.querySelectorAll('.file-icon').forEach(icon => {
+        icon.classList.remove('selected');
+      });
+      fileIcon.classList.add('selected');
+    }
+
+    function renameFile(fileIcon) {
+      const fileNameElement = fileIcon.querySelector('.file-name');
+      const oldName = fileNameElement.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = oldName;
+      input.className = 'file-name-edit';
+      
+      fileNameElement.replaceWith(input);
+      input.focus();
+      input.select();
+
+      input.addEventListener('blur', finishRename);
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          finishRename();
+        }
+      });
+
+      function finishRename() {
+        const newName = input.value.trim();
+        if (newName && newName !== oldName) {
+          const userDir = getDirectory('/home/user');
+          if (userDir.content[newName]) {
+            alert('A file with this name already exists.');
+            input.replaceWith(fileNameElement);
+            return;
+          }
+          userDir.content[newName] = userDir.content[oldName];
+          delete userDir.content[oldName];
+          fileNameElement.textContent = newName;
+        }
+        input.replaceWith(fileNameElement);
+      }
+    }
+
+    desktop.addEventListener('click', () => {
+      document.querySelectorAll('.file-icon').forEach(icon => {
+        icon.classList.remove('selected');
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'F2') {
+        const selectedFile = document.querySelector('.file-icon.selected');
+        if (selectedFile) {
+          renameFile(selectedFile);
+        }
+      }
+    });
+
+    function openTerminal() {
+      const terminalContent = `<div id="terminal-content">Welcome to HackerOS v1.0</div>`;
+      const terminal = createWindow('Terminal', terminalContent, 50, 50, 600, 400);
+      const content = terminal.querySelector('#terminal-content');
+
+      function createTerminalLine() {
+        const line = document.createElement('div');
+        line.className = 'terminal-line';
+        line.innerHTML = `<span class="terminal-prompt">root@hackeros:${currentPath}#</span><input type="text" class="terminal-input">`;
+        content.appendChild(line);
+        return line.querySelector('input');
+      }
+
+      function processCommand(command) {
+        const output = document.createElement('div');
+        const parts = command.split(' ');
+        switch (parts[0]) {
+          case 'ls':
+            const path = parts[1] || currentPath;
+            const dir = getDirectory(path);
+            if (dir && dir.type === 'directory') {
+              output.textContent = Object.keys(dir.content).join(' ');
+            } else {
+              output.textContent = 'ls: cannot access ' + path + ': No such file or directory';
+            }
+            break;
+          case 'cd':
+            const newPath = parts[1] || '/home/user';
+            const newDir = getDirectory(newPath);
+            if (newDir && newDir.type === 'directory') {
+              currentPath = newPath;
+              output.textContent = 'Changed directory to ' + newPath;
+            } else {
+              output.textContent = 'cd: ' + newPath + ': No such file or directory';
+            }
+            break;
+          default:
+            output.textContent = `${command}: command not found`;
+        }
+        content.appendChild(output);
+      }
+
+      let currentInput = createTerminalLine();
+      currentInput.focus();
+
+      content.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('terminal-input') && e.key === 'Enter') {
+          const command = e.target.value;
+          processCommand(command);
+          e.target.disabled = true;
+          currentInput = createTerminalLine();
+          currentInput.focus();
+        }
+      });
+    }
+    
+
+    function openTextEditor(fileName) {
+      const file = getDirectory('/home/user').content[fileName];
+      const editorContent = `
+        <textarea style="width: 100%; height: calc(100% - 30px); background-color: #001100; color: #00ff00; border: none; resize: none;">${file.content}</textarea>
+        <button id="save-button" style="background-color: #003300; color: #00ff00; border: 1px solid #00ff00; padding: 5px 10px; margin-top: 5px;">Save</button>
+      `;
+      const editor = createWindow(fileName, editorContent, 100, 100, 400, 300);
+      
+      const textarea = editor.querySelector('textarea');
+      const saveButton = editor.querySelector('#save-button');
+      
+      let isContentSaved = true;
+
+      textarea.addEventListener('input', () => {
+        isContentSaved = false;
+      });
+
+      saveButton.addEventListener('click', () => {
+        file.content = textarea.value;
+        isContentSaved = true;
+        alert('File saved successfully!');
+      });
+
+      editor.onBeforeClose = (closeCallback) => {
+        if (!isContentSaved) {
+          if (confirm('The file has not been saved. Do you really want to close?')) {
+            closeCallback();
+          }
+        } else {
+          closeCallback();
+        }
+      };
+    }
+
+    function openTerminal() {
+      const terminalContent = `<div id="terminal-content">Welcome to HackerOS v1.0</div>`;
+      const terminal = createWindow('Terminal', terminalContent, 50, 50, 600, 400);
+      const content = terminal.querySelector('#terminal-content');
+
+      function createTerminalLine() {
+        const line = document.createElement('div');
+        line.className = 'terminal-line';
+        line.innerHTML = '<span class="terminal-prompt">root@hackeros:~#</span><input type="text" class="terminal-input">';
+        content.appendChild(line);
+        return line.querySelector('input');
+      }
+
+      function processCommand(command) {
+        const output = document.createElement('div');
+        const parts = command.split(' ');
+        switch (parts[0]) {
+          case 'ls':
+            const path = parts[1] || currentPath;
+            const dir = getDirectory(path);
+            if (dir && dir.type === 'directory') {
+              output.textContent = Object.keys(dir.content).join(' ');
+            } else {
+              output.textContent = 'ls: cannot access ' + path + ': No such file or directory';
+            }
+            break;
+          case 'cd':
+            const newPath = parts[1] || '/home/user';
+            const newDir = getDirectory(newPath);
+            if (newDir && newDir.type === 'directory') {
+              currentPath = newPath;
+              output.textContent = 'Changed directory to ' + newPath;
+            } else {
+              output.textContent = 'cd: ' + newPath + ': No such file or directory';
+            }
+            break;
+          default:
+            output.textContent = `${command}: command not found`;
+        }
+        content.appendChild(output);
+      }
+
+      let currentInput = createTerminalLine();
+      currentInput.focus();
+
+      content.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('terminal-input') && e.key === 'Enter') {
+          const command = e.target.value;
+          processCommand(command);
+          e.target.disabled = true;
+          currentInput = createTerminalLine();
+          currentInput.focus();
+        }
+      });
+    }
+
+    function openBrowser() {
+      const browserContent = `
+        <div class="browser-controls">
+          <input type="text" id="url-input" placeholder="Enter URL...">
+          <button id="go-button">Go</button>
+        </div>
+        <iframe id="browser-content"></iframe>
+      `;
+      const browser = createWindow('Web Browser', browserContent, 200, 50, 800, 600);
+
+      const urlInput = browser.querySelector('#url-input');
+      const goButton = browser.querySelector('#go-button');
+      const browserFrame = browser.querySelector('#browser-content');
+
+      function loadUrl() {
+        const url = urlInput.value;
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          browserFrame.src = url;
+        } else {
+          browserFrame.src = `https://${url}`;
+        }
+      }
+
+      goButton.onclick = loadUrl;
+      urlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          loadUrl();
+        }
+      });
+    }
+
+    function openMetasploit() {
+      const metasploitContent = `
+        <div style="color: #00ff00; background-color: rgba(0, 20, 0, 0.9);">
+          <pre>
+     _                                                    _
+    / \\  /\\         __                         _   __  ___/ \\
+   / \\ \\/ /  ____ _/ /_  __  ____ ___________ (_) / /_/  /\\ \\
+  / _\\/ /  / __ \`/ __ \\/ / / / __ \`/ ___/ __ \\   / __   _\\ \\
+ / / / /  / /_/ / / / / /_/ / /_/ (__  ) /_/ /  / /_/  /\\ \\ \\
+/_/ /_/   \\__,_/_/ /_/\\__, /\\__,_/____/ .___/   \\__/__/  \\_\\
+                     /____/          /_/
+          </pre>
+          <p>Metasploit Framework initialized...</p>
+          <div id="metasploit-terminal"></div>
+        </div>
+      `;
+      const metasploitWindow = createWindow('Metasploit', metasploitContent, 100, 100, 700, 500);
+
+      const terminal = metasploitWindow.querySelector('#metasploit-terminal');
+      
+      function createTerminalLine() {
+        const line = document.createElement('div');
+        line.style.display = 'flex';
+        line.innerHTML = '<span style="color: #FF0000;">msf6 ></span> <input type="text" style="flex-grow: 1; background: transparent; border: none; color: #00ff00; outline: none;">';
+        terminal.appendChild(line);
+        return line.querySelector('input');
+      }
+
+      function processCommand(command) {
+        const output = document.createElement('pre');
+        output.style.color = '#00ff00';
+        output.style.margin = '5px 0';
+
+        switch (command.trim().toLowerCase()) {
+          case 'help':
+            output.textContent = `
+Core Commands
+=============
+Command       Description
+-------       -----------
+help          Help menu
+use           Selects a module by name
+search        Searches module names and descriptions
+show          Displays modules of a given type
+exit          Exit the console
+
+Module Commands
+===============
+Command       Description
+-------       -----------
+back          Move back from the current context
+info          Displays information about one or more modules
+options       Displays global options or for one or more modules
+set           Sets a variable to a value
+unset         Unsets one or more variables
+run           Executes the selected module
+`;
+            break;
+          case 'use exploit/multi/handler':
+            output.textContent = 'Using exploit/multi/handler...';
+            break;
+          case 'show options':
+            output.textContent = `
+Module options (exploit/multi/handler):
+
+Name  Current Setting  Required  Description
+----  ---------------  --------  -----------
+LHOST                  yes       The listen address (an interface may be specified)
+LPORT  4444            yes       The listen port
+
+
+Payload options (generic/shell_reverse_tcp):
+
+Name   Current Setting  Required  Description
+----   ---------------  --------  -----------
+LHOST                   yes       The listen address (an interface may be specified)
+LPORT  4444             yes       The listen port
+
+
+Exploit target:
+
+Id  Name
+--  ----
+0   Wildcard Target
+`;
+            break;
+          case 'exit':
+            metasploitWindow.remove();
+            return;
+          default:
+            output.textContent = `[-] Unknown command: ${command}`;
+        }
+
+        terminal.appendChild(output);
+      }
+
+      let currentInput = createTerminalLine();
+      currentInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          const command = currentInput.value;
+          processCommand(command);
+          currentInput = createTerminalLine();
+          currentInput.focus();
+        }
+      });
+
+      currentInput.focus();
+    }
+
+    function openNmap() {
+      const nmapContent = `
+        <div style="color: #00ff00; background-color: rgba(0, 20, 0, 0.9);">
+          <pre>
+     _   _                      _
+    | \\ | |                    | |
+    |  \\| |_ __ ___   __ _ _ __| |
+    | . \` | '_ \` _ \\ / _\` | '__| |
+    | |\\  | | | | | | (_| | |  |_|
+    \\_| \\_/_| |_| |_|\\__,_|_|  (_)
+          </pre>
+          <p>Nmap Network Scanning Tool</p>
+          <input type="text" id="nmap-input" style="background: transparent; border: 1px solid #00ff00; color: #00ff00;" placeholder="Enter target IP...">
+          <button id="nmap-scan" style="background: #003300; color: #00ff00; border: 1px solid #00ff00;">Scan</button>
+          <pre id="nmap-output"></pre>
+        </div>
+      `;
+      const nmapWindow = createWindow('Nmap', nmapContent, 150, 150, 600, 400);
+
+      const nmapInput = nmapWindow.querySelector('#nmap-input');
+      const nmapScan = nmapWindow.querySelector('#nmap-scan');
+      const nmapOutput = nmapWindow.querySelector('#nmap-output');
+
+      nmapScan.onclick = () => {
+        const target = nmapInput.value;
+        nmapOutput.textContent = `Starting Nmap 7.92 ( https://nmap.org ) at ${new Date().toLocaleString()}
+Nmap scan report for ${target}
+Host is up (0.0050s latency).
+Not shown: 997 closed tcp ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+443/tcp open  https
+
+Nmap done: 1 IP address (1 host up) scanned in 0.03 seconds`;
+      };
+    }
+
+    function openBackgroundChanger() {
+      const backgrounds = [
+        {
+          name: "Matrix Rain",
+          style: "matrix-rain"
+        },
+        {
+          name: "Circuit Board",
+          style: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' x2='0' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%23001100'/%3E%3Cstop offset='1' stop-color='%23000000'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpattern id='b' width='24' height='24' patternUnits='userSpaceOnUse'%3E%3Cpath fill='%2300FF00' fill-opacity='0.1' d='M0 0h8v8H0zm12 0h8v8h-8zm12 0h8v8h-8zM0 12h8v8H0zm12 0h8v8h-8zm12 0h8v8h-8z'/%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23a)'/%3E%3Crect width='100%25' height='100%25' fill='url(%23b)'/%3E%3C/svg%3E")`
+        },
+        {
+          name: "Binary Code",
+          style: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' x2='0' y1='0' y2='1' gradientTransform='rotate(0,0.5,0.5)'%3E%3Cstop offset='0' stop-color='%23000000'/%3E%3Cstop offset='1' stop-color='%23001100'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpattern id='b' width='12' height='12' patternUnits='userSpaceOnUse'%3E%3Ctext x='0' y='10' font-size='10' fill='%2300FF00' fill-opacity='0.1'>0 1</text%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23a)'/%3E%3Crect width='100%25' height='100%25' fill='url(%23b)'/%3E%3C/svg%3E")`
+        },
+        {
+          name: "Hexadecimal Grid",
+          style: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' x2='0' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%23000000'/%3E%3Cstop offset='1' stop-color='%23001100'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpattern id='b' width='32' height='32' patternUnits='userSpaceOnUse'%3E%3Ctext x='0' y='16' font-size='12' fill='%2300FF00' fill-opacity='0.1'>0x</text%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23a)'/%3E%3Crect width='100%25' height='100%25' fill='url(%23b)'/%3E%3C/svg%3E")`
+        },
+        {
+          name: "Network Nodes",
+          style: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' x2='0' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%23000000'/%3E%3Cstop offset='1' stop-color='%23001100'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpattern id='b' width='40' height='40' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='20' cy='20' r='2' fill='%2300FF00' fill-opacity='0.1'/%3E%3Cpath d='M0 20h40M20 0v40' stroke='%2300FF00' stroke-opacity='0.05'/%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23a)'/%3E%3Crect width='100%25' height='100%25' fill='url(%23b)'/%3E%3C/svg%3E")`
+        }
+      ];
+
+      const backgroundContent = `
+        <h3 style="color: #00ff00;">Choose a hacker-style wallpaper:</h3>
+        <ul class="wallpaper-list">
+          ${backgrounds.map((bg, index) => `
+            <li class="wallpaper-item" data-index="${index}">${bg.name}</li>
+          `).join('')}
+        </ul>
+      `;
+      const bgWindow = createWindow('Background Selector', backgroundContent, 300, 300, 300, 400);
+
+      const listItems = bgWindow.querySelectorAll('.wallpaper-item');
+
+      listItems.forEach((item, index) => {
+        item.addEventListener('click', () => {
+          if (backgrounds[index].style === "matrix-rain") {
+            desktop.style.backgroundImage = "none";
+            desktop.style.backgroundColor = "black";
+            startMatrixRain();
+          } else {
+            desktop.style.backgroundImage = backgrounds[index].style;
+            stopMatrixRain();
+          }
+          bgWindow.remove();
+        });
+      });
+    }
+
+    // Matrix Rain Animation
+    const canvas = document.createElement('canvas');
+    canvas.id = 'matrix-rain';
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = 'calc(100% - 30px)';
+    canvas.style.zIndex = '-1';
+    desktop.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d');
+
+    let matrixRainInterval;
+
+    function startMatrixRain() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight - 30; // Subtract taskbar height
+
+      const fontSize = 14;
+      const columns = canvas.width / 20;
+      const drops = [];
+
+      for (let i = 0; i < columns; i++) {
+        drops[i] = 1;
+      }
+
+      function draw() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#00ff00';
+        ctx.font = `${fontSize}px monospace`;
+
+        for (let i = 0; i < drops.length; i++) {
+          const text = String.fromCharCode(0x30A0 + Math.random() * 96);
+          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+          }
+
+          drops[i]++;
+        }
+      }
+
+      matrixRainInterval = setInterval(draw, 33);
+    }
+
+    function stopMatrixRain() {
+      clearInterval(matrixRainInterval);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Initialize with Matrix Rain background
+    startMatrixRain();
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight - 30;
+    });
+
+    // Set up icon click events
+    document.getElementById('terminal-icon').onclick = openTerminal;
+    document.getElementById('browser-icon').onclick = openBrowser;
+    document.getElementById('metasploit-icon').onclick = openMetasploit;
+    document.getElementById('nmap-icon').onclick = openNmap;
+    document.getElementById('background-icon').onclick = openBackgroundChanger;
+
+  </script>
+</body>
+</html>
